@@ -23,8 +23,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 **Completed Phases:**
 - Phase 1: Project Initialization
 - Phase 2: Enterprise Project Structure
+- Phase 3: Shared AI Services
 
-**Current Phase:** Phase 2 (Completed)
+**Current Phase:** Phase 3 (Completed)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -39,11 +40,19 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Placed `.gitkeep` files in empty directories to ensure they are tracked in Git.
 - Documented the architecture and updated the living engineering document (`README.md`).
 
+**What was completed in Phase 3:**
+- Implemented `env.ts` with strict schema validation using Zod to parse and validate `GOOGLE_API_KEY` and `TAVILY_API_KEY`, displaying user-friendly error messages if keys are missing.
+- Built a reusable Gemini service in `gemini.ts` using the official `@google/generative-ai` SDK, exporting `generateText()` for easy prompting with model parameters (like temperature, max tokens, system instructions).
+- Built a reusable Tavily service in `tavily.ts` using the `tavily` SDK, exporting `performSearch()` which returns clean, normalized search results containing only the title, URL, and snippet.
+- Created `scripts/test-services.ts` to test env validation, Gemini generation, and Tavily search.
+
 ## Current Folder Structure
 ```
 ai-investment-research-agent/
 │
 ├── public/                 # Static public assets
+├── scripts/                # Utility scripts (e.g. test scripts)
+│   └── test-services.ts    # Service integration test CLI script
 ├── src/                    # Application source code
 │   ├── app/                # Next.js App Router root
 │   ├── agents/             # Modular agent logic folder
@@ -53,6 +62,9 @@ ai-investment-research-agent/
 │   │   └── decision/       # Decision-making and report synthesizer agent
 │   ├── graph/              # LangGraph workflow orchestration layer
 │   ├── services/           # Shared service clients (Gemini, Tavily API wrappers)
+│   │   ├── env.ts          # Environment variables validation & export
+│   │   ├── gemini.ts       # Shared Gemini LLM API client wrapper
+│   │   └── tavily.ts       # Shared Tavily Search API client wrapper
 │   ├── tools/              # Reusable agent tools (e.g., search tools, calculators)
 │   ├── types/              # Centralized TypeScript declarations and schemas
 │   ├── constants/          # Application-wide configuration and threshold constants
@@ -79,8 +91,20 @@ To keep the architecture simple, clean, and easily understandable for any develo
 - **`src/constants/`**: Holds application-wide static constants such as model parameter settings, limit constraints, decision thresholds, and styling configs.
 - **`src/utils/`**: Reserved for simple, pure utility functions (e.g., string formatting, logging, general helpers) utilized across different directories.
 
+### Shared AI Services Architecture
+To prevent duplication and keep agent implementation clean, Phase 3 centralizes all external service communication:
+- **`src/services/env.ts`**: Validates the presence of `GOOGLE_API_KEY` and `TAVILY_API_KEY` on startup using `zod`. If either is missing, it interrupts execution with a descriptive instruction on how to populate `.env.local`.
+- **`src/services/gemini.ts`**: Connects to the official `@google/generative-ai` SDK and utilizes `gemini-2.5-flash`. It encapsulates LLM calls inside `generateText(prompt, options)`.
+- **`src/services/tavily.ts`**: Wrapper for the `tavily` API client that exposes a `performSearch(query, options)` function. It normalizes all search responses into a simple, consistent array of `SearchResult` objects:
+  ```typescript
+  export interface SearchResult {
+    title: string;
+    url: string;
+    content: string;
+  }
+  ```
+
 ## Remaining Phases
-- Phase 3: Gemini + Tavily Integration
 - Phase 4: Research Agent
 - Phase 5: Financial Agent
 - Phase 6: Risk Agent
@@ -91,6 +115,6 @@ To keep the architecture simple, clean, and easily understandable for any develo
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 3: Gemini + Tavily Integration**
-The upcoming phase will focus on implementing reusable service wrappers for the Gemini LLM and Tavily Search API. These services will handle client initialization, credentials, and API connection checks, serving as the foundational services for the individual agents in future phases.
+**Phase 4: Research Agent**
+The upcoming phase will focus on implementing the Planning Module for the Research Agent. This module determines what details are needed for a company's investment analysis and schedules the search queries before execution.
 

@@ -24,8 +24,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 1: Project Initialization
 - Phase 2: Enterprise Project Structure
 - Phase 3: Shared AI Services
+- Phase 4.1: Research Planner
 
-**Current Phase:** Phase 3 (Completed)
+**Current Phase:** Phase 4.1 (Completed)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -52,11 +53,13 @@ ai-investment-research-agent/
 │
 ├── public/                 # Static public assets
 ├── scripts/                # Utility scripts (e.g. test scripts)
-│   └── test-services.ts    # Service integration test CLI script
+│   ├── test-services.ts    # Service integration test CLI script
+│   └── test-planner.ts     # Research Planner unit test CLI script
 ├── src/                    # Application source code
 │   ├── app/                # Next.js App Router root
 │   ├── agents/             # Modular agent logic folder
 │   │   ├── research/       # Research agent modules and tasks
+│   │   │   └── planner.ts  # Research Planner: validates input, builds ResearchPlan
 │   │   ├── financial/      # Financial analysis agent modules and tasks
 │   │   ├── risk/           # Risk assessment agent modules and tasks
 │   │   └── decision/       # Decision-making and report synthesizer agent
@@ -67,7 +70,9 @@ ai-investment-research-agent/
 │   │   └── tavily.ts       # Shared Tavily Search API client wrapper
 │   ├── tools/              # Reusable agent tools (e.g., search tools, calculators)
 │   ├── types/              # Centralized TypeScript declarations and schemas
+│   │   └── research.ts     # ResearchTopic, ResearchPlan, PlannerInput interfaces
 │   ├── constants/          # Application-wide configuration and threshold constants
+│   │   └── research-topics.ts  # Predefined ordered list of investment research topics
 │   └── utils/              # Shared helper and utility functions
 │
 ├── package.json            # npm dependencies and scripts
@@ -105,7 +110,9 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
   ```
 
 ## Remaining Phases
-- Phase 4: Research Agent
+- Phase 4.2: Search Executor
+- Phase 4.3: Research Summarizer
+- Phase 4.4: Research Agent Orchestrator
 - Phase 5: Financial Agent
 - Phase 6: Risk Agent
 - Phase 7: Decision Agent
@@ -115,6 +122,55 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 4: Research Agent**
-The upcoming phase will focus on implementing the Planning Module for the Research Agent. This module determines what details are needed for a company's investment analysis and schedules the search queries before execution.
+**Phase 4.2: Search Executor**
+The Search Executor will receive the ResearchPlan produced by the planner, generate focused search queries for each research topic, call the Tavily service, and return structured search results — without performing any summarization.
 
+---
+
+## Phase 4.1 – Research Planner
+
+### Purpose
+The Research Planner is the first module in the Research Agent pipeline.
+It determines **what information must be collected** about a company before any web searches begin.
+It is intentionally simple, deterministic, and free of any AI or network calls.
+
+### Responsibilities
+- Accept a company name as input.
+- Validate the name (reject empty strings and whitespace-only input).
+- Trim unnecessary whitespace from the name.
+- Return a structured `ResearchPlan` containing the company name and a fixed ordered list of research topics.
+
+### Input
+```typescript
+{ companyName: string }
+```
+
+### Output
+```typescript
+{
+  company: string;
+  researchTopics: [
+    { id: "company_overview", title: "Company Overview",   priority: 1 },
+    { id: "industry",         title: "Industry",           priority: 2 },
+    { id: "business_model",   title: "Business Model",     priority: 3 },
+    { id: "leadership",       title: "Leadership",         priority: 4 },
+    { id: "competitors",      title: "Competitors",        priority: 5 },
+    { id: "recent_news",      title: "Recent News",        priority: 6 },
+    { id: "market_sentiment", title: "Market Sentiment",   priority: 7 },
+    { id: "key_strengths",    title: "Key Strengths",      priority: 8 },
+    { id: "key_challenges",   title: "Key Challenges",     priority: 9 }
+  ]
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/research/planner.ts` | Validates input and produces a `ResearchPlan` |
+| `src/constants/research-topics.ts` | Stores the predefined list of `ResearchTopic` objects |
+| `src/types/research.ts` | TypeScript interfaces: `ResearchTopic`, `ResearchPlan`, `PlannerInput` |
+| `scripts/test-planner.ts` | Unit test runner for the planner |
+
+### How Phase 4.2 Consumes This Output
+The Search Executor (Phase 4.2) will receive the `ResearchPlan` from this planner.
+For each `ResearchTopic` in `researchTopics`, it will generate a focused search query and call the Tavily service to retrieve raw search results.

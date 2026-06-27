@@ -68,3 +68,36 @@ export interface SearchReport {
   searchResults: TopicSearchResult[];
 }
 
+// ─── Phase 4.3 – Research Summarizer ─────────────────────────────────────────
+
+/**
+ * A single citation preserved from the original web evidence.
+ * Every summarized section must link back to at least one source.
+ */
+export interface ReportSource {
+  /** The research section this source supports (e.g. "Leadership"). */
+  section: string;
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+/**
+ * The fully structured Research Report produced by the Summarizer.
+ * This is the shared data contract consumed by every downstream agent
+ * (Financial, Risk, Decision) in the pipeline.
+ */
+export interface ResearchReport {
+  company: string;
+  companyOverview: string;
+  industry: string;
+  businessModel: string;
+  leadership: string;
+  competitors: string[];
+  recentNews: string[];
+  marketSentiment: string;
+  keyStrengths: string[];
+  keyChallenges: string[];
+  /** All citations collected across every summarized section. */
+  sources: ReportSource[];
+}

@@ -26,8 +26,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 3: Shared AI Services
 - Phase 4.1: Research Planner
 - Phase 4.2: Search Executor
+- Phase 4.3: Research Summarizer
 
-**Current Phase:** Phase 4.2 (Completed)
+**Current Phase:** Phase 4.3 (Completed)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -55,13 +56,16 @@ ai-investment-research-agent/
 ├── public/                 # Static public assets
 ├── scripts/                # Utility scripts (e.g. test scripts)
 │   ├── test-services.ts    # Service integration test CLI script
-│   └── test-planner.ts     # Research Planner unit test CLI script
+│   ├── test-planner.ts     # Research Planner unit test CLI script
+│   ├── test-search.ts      # Search Executor integration test CLI script
+│   └── test-summarizer.ts  # Research Summarizer integration test CLI script
 ├── src/                    # Application source code
 │   ├── app/                # Next.js App Router root
 │   ├── agents/             # Modular agent logic folder
 │   │   ├── research/       # Research agent modules and tasks
-│   │   │   ├── planner.ts  # Research Planner: validates input, builds ResearchPlan
-│   │   │   └── search.ts   # Search Executor: queries Tavily per topic, returns SearchReport
+│   │   │   ├── planner.ts      # Research Planner: validates input, builds ResearchPlan
+│   │   │   ├── search.ts       # Search Executor: queries Tavily per topic, returns SearchReport
+│   │   │   └── summarizer.ts   # Research Summarizer: calls Gemini per topic, returns ResearchReport
 │   │   ├── financial/      # Financial analysis agent modules and tasks
 │   │   ├── risk/           # Risk assessment agent modules and tasks
 │   │   └── decision/       # Decision-making and report synthesizer agent
@@ -72,7 +76,7 @@ ai-investment-research-agent/
 │   │   └── tavily.ts       # Shared Tavily Search API client wrapper
 │   ├── tools/              # Reusable agent tools (e.g., search tools, calculators)
 │   ├── types/              # Centralized TypeScript declarations and schemas
-│   │   └── research.ts     # ResearchTopic, ResearchPlan, SearchReport + related interfaces
+│   │   └── research.ts     # All research pipeline interfaces: ResearchTopic → ResearchReport
 │   ├── constants/          # Application-wide configuration and threshold constants
 │   │   └── research-topics.ts  # Predefined ordered list of investment research topics
 │   └── utils/              # Shared helper and utility functions
@@ -112,7 +116,6 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
   ```
 
 ## Remaining Phases
-- Phase 4.3: Research Summarizer
 - Phase 4.4: Research Agent Orchestrator
 - Phase 5: Financial Agent
 - Phase 6: Risk Agent
@@ -123,8 +126,8 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 4.3: Research Summarizer**
-The Research Summarizer will receive the `SearchReport` from the Search Executor, call Gemini to synthesize each topic's evidence into a structured research report, and preserve citations throughout.
+**Phase 4.4: Research Agent Orchestrator**
+The orchestrator will wire together the Planner, Search Executor, and Research Summarizer into a single callable function — accepting a company name and returning a complete `ResearchReport` without any financial analysis or investment recommendations.
 
 ---
 
@@ -239,5 +242,73 @@ Queries are built deterministically using fixed templates — no AI is involved:
 | `scripts/test-search.ts` | Integration test runner (requires real API credentials) |
 
 ### How Phase 4.3 Consumes This Output
-The Research Summarizer (Phase 4.3) will receive the `SearchReport` from this executor.
-For each `TopicSearchResult`, it will use the Gemini service to synthesize the raw evidence snippets into a concise, citation-preserving research summary.
+The Research Summarizer (Phase 4.3) receives the `SearchReport` from this executor.
+For each `TopicSearchResult`, it uses the Gemini service to synthesize the raw evidence snippets into a concise, citation-preserving research summary.
+
+---
+
+## Phase 4.3 – Research Summarizer
+
+### Purpose
+The Research Summarizer is the third module in the Research Agent pipeline.
+It transforms raw web evidence from the Search Executor into a fully structured, citation-backed **Research Report** ready for downstream agents.
+It uses Gemini to produce factual, professional summaries — one topic at a time.
+
+### Responsibilities
+- Receive a `SearchReport` produced by the Search Executor.
+- For each research topic, build a focused prompt using only that topic's evidence.
+- Call the shared Gemini service (`generateText`) with a fixed system instruction.
+- Map each Gemini response to the correct `ResearchReport` field.
+- Collect all original evidence as `ReportSource` citations in `sources`.
+- Return a complete `ResearchReport`.
+
+### Summarization Rules
+- Use only the supplied evidence — no external knowledge, no invented facts.
+- If evidence is insufficient, the model responds with `"Insufficient evidence available."`.
+- No investment recommendations or financial analysis.
+- Concise 2–4 sentence summaries per topic.
+- Rate-limited to 5 Gemini calls per minute (13-second delay between calls) for free-tier compatibility.
+
+### Input
+```typescript
+{
+  company: string;
+  searchResults: TopicSearchResult[];  // from Search Executor
+}
+```
+
+### Output – Research Report Schema
+```typescript
+{
+  company: string;
+  companyOverview: string;
+  industry: string;
+  businessModel: string;
+  leadership: string;
+  competitors: string[];
+  recentNews: string[];
+  marketSentiment: string;
+  keyStrengths: string[];
+  keyChallenges: string[];
+  sources: [
+    {
+      section: string;  // e.g. "Leadership"
+      title: string;
+      url: string;
+      snippet: string;
+    }
+  ];
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/research/summarizer.ts` | Research Summarizer — calls Gemini per topic, returns `ResearchReport` |
+| `src/types/research.ts` | Adds `ReportSource` and `ResearchReport` interfaces |
+| `scripts/test-summarizer.ts` | Integration test runner (requires real API credentials) |
+
+### How Phase 4.4 Consumes This Output
+The Research Agent Orchestrator (Phase 4.4) will wire the Planner → Search Executor → Summarizer into a single callable function.
+It will accept a company name as input and return the complete `ResearchReport` as its only output.
+

@@ -25,8 +25,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 2: Enterprise Project Structure
 - Phase 3: Shared AI Services
 - Phase 4.1: Research Planner
+- Phase 4.2: Search Executor
 
-**Current Phase:** Phase 4.1 (Completed)
+**Current Phase:** Phase 4.2 (Completed)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -59,7 +60,8 @@ ai-investment-research-agent/
 │   ├── app/                # Next.js App Router root
 │   ├── agents/             # Modular agent logic folder
 │   │   ├── research/       # Research agent modules and tasks
-│   │   │   └── planner.ts  # Research Planner: validates input, builds ResearchPlan
+│   │   │   ├── planner.ts  # Research Planner: validates input, builds ResearchPlan
+│   │   │   └── search.ts   # Search Executor: queries Tavily per topic, returns SearchReport
 │   │   ├── financial/      # Financial analysis agent modules and tasks
 │   │   ├── risk/           # Risk assessment agent modules and tasks
 │   │   └── decision/       # Decision-making and report synthesizer agent
@@ -70,7 +72,7 @@ ai-investment-research-agent/
 │   │   └── tavily.ts       # Shared Tavily Search API client wrapper
 │   ├── tools/              # Reusable agent tools (e.g., search tools, calculators)
 │   ├── types/              # Centralized TypeScript declarations and schemas
-│   │   └── research.ts     # ResearchTopic, ResearchPlan, PlannerInput interfaces
+│   │   └── research.ts     # ResearchTopic, ResearchPlan, SearchReport + related interfaces
 │   ├── constants/          # Application-wide configuration and threshold constants
 │   │   └── research-topics.ts  # Predefined ordered list of investment research topics
 │   └── utils/              # Shared helper and utility functions
@@ -110,7 +112,6 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
   ```
 
 ## Remaining Phases
-- Phase 4.2: Search Executor
 - Phase 4.3: Research Summarizer
 - Phase 4.4: Research Agent Orchestrator
 - Phase 5: Financial Agent
@@ -122,8 +123,8 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 4.2: Search Executor**
-The Search Executor will receive the ResearchPlan produced by the planner, generate focused search queries for each research topic, call the Tavily service, and return structured search results — without performing any summarization.
+**Phase 4.3: Research Summarizer**
+The Research Summarizer will receive the `SearchReport` from the Search Executor, call Gemini to synthesize each topic's evidence into a structured research report, and preserve citations throughout.
 
 ---
 
@@ -172,5 +173,71 @@ It is intentionally simple, deterministic, and free of any AI or network calls.
 | `scripts/test-planner.ts` | Unit test runner for the planner |
 
 ### How Phase 4.2 Consumes This Output
-The Search Executor (Phase 4.2) will receive the `ResearchPlan` from this planner.
-For each `ResearchTopic` in `researchTopics`, it will generate a focused search query and call the Tavily service to retrieve raw search results.
+The Search Executor (Phase 4.2) receives the `ResearchPlan` from this planner.
+For each `ResearchTopic` in `researchTopics`, it generates a focused search query and calls the Tavily service to retrieve raw search results.
+
+---
+
+## Phase 4.2 – Search Executor
+
+### Purpose
+The Search Executor is the second module in the Research Agent pipeline.
+It determines **how** information is retrieved by converting a `ResearchPlan` into structured web search results.
+It makes no AI calls and performs no summarization or analysis.
+
+### Responsibilities
+- Receive a `ResearchPlan` produced by the Research Planner.
+- Build a deterministic search query for each research topic.
+- Call the shared Tavily service for each query.
+- Normalize the raw results into `SearchEvidence` records (title, url, snippet).
+- Return a `SearchReport` containing all collected evidence.
+
+### Input
+```typescript
+{
+  company: string;
+  researchTopics: ResearchTopic[];
+}
+```
+
+### Output
+```typescript
+{
+  company: string;
+  searchResults: [
+    {
+      topic: string;    // e.g. "Leadership"
+      query: string;    // e.g. "Tesla leadership CEO executive team"
+      results: [
+        { title: string; url: string; snippet: string; }
+      ];
+    }
+  ];
+}
+```
+
+### Query Generation
+Queries are built deterministically using fixed templates — no AI is involved:
+
+| Topic | Query Pattern |
+|---|---|
+| Company Overview | `{company} company overview` |
+| Industry | `{company} industry and sector` |
+| Business Model | `{company} business model revenue streams` |
+| Leadership | `{company} leadership CEO executive team` |
+| Competitors | `{company} competitors and rival companies` |
+| Recent News | `{company} latest news` |
+| Market Sentiment | `{company} investor market sentiment` |
+| Key Strengths | `{company} competitive advantages key strengths` |
+| Key Challenges | `{company} business challenges risks` |
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/research/search.ts` | Search Executor — builds queries, calls Tavily, returns `SearchReport` |
+| `src/types/research.ts` | Adds `SearchEvidence`, `TopicSearchResult`, `SearchReport` interfaces |
+| `scripts/test-search.ts` | Integration test runner (requires real API credentials) |
+
+### How Phase 4.3 Consumes This Output
+The Research Summarizer (Phase 4.3) will receive the `SearchReport` from this executor.
+For each `TopicSearchResult`, it will use the Gemini service to synthesize the raw evidence snippets into a concise, citation-preserving research summary.

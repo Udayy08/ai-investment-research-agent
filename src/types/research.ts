@@ -32,3 +32,39 @@ export interface PlannerInput {
   /** The name of the company to research. */
   companyName: string;
 }
+
+// ─── Phase 4.2 – Search Executor ─────────────────────────────────────────────
+
+/**
+ * A single piece of evidence returned by a web search.
+ * The snippet field maps to the content/snippet returned by Tavily.
+ */
+export interface SearchEvidence {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+/**
+ * The search results collected for one research topic.
+ */
+export interface TopicSearchResult {
+  /** The topic title (e.g. "Leadership"). */
+  topic: string;
+  /** The deterministic query that was executed. */
+  query: string;
+  /** Evidence collected from the web search. */
+  results: SearchEvidence[];
+}
+
+/**
+ * The structured output produced by the Search Executor.
+ * Consumed by the Research Summarizer in Phase 4.3.
+ */
+export interface SearchReport {
+  /** The validated company name (passed through from the ResearchPlan). */
+  company: string;
+  /** One entry per research topic in the original ResearchPlan. */
+  searchResults: TopicSearchResult[];
+}
+

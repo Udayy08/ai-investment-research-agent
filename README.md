@@ -30,8 +30,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 4.4: Research Agent Orchestrator
 - **Phase 4: Research Agent (Fully Complete)**
 - **Phase 5: Financial Agent (Fully Complete)**
+- **Phase 6: Risk Agent (Fully Complete)**
 
-**Current Phase:** Phase 6 (Pending)
+**Current Phase:** Phase 7 (Pending)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -62,6 +63,12 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - **Financial Agent Pipeline**: Built an independent LangChain-based pipeline using `ChatGoogleGenerativeAI` with structured output (`zod`).
 - **Financial Report Contract**: Established the `FinancialReport` schema ensuring traceability by coupling evidence directly to corresponding Research Report sections.
 - **Evaluation Logic**: Engineered the agent to grade Business Quality, Market Position, Financial Health, etc. generating an `overallScore` and assigning explicitly defined `reasoning` without inventing external data.
+
+**What was completed in Phase 6:**
+- **Risk Agent Pipeline**: Built an independent LangChain-based pipeline that fuses data from both `ResearchReport` and `FinancialReport`.
+- **Risk Report Contract**: Established the `RiskReport` schema defining strict categories (Competitive, Market, Operational, Technology, Regulatory, Leadership, Reputation, Financial).
+- **Risk Item Structuring**: Identified individual risks with precise mapping to `Probability`, `Impact`, `Severity`, and `MitigationFeasibility` levels.
+- **DFA Compilation Optimizations**: Engineered Zod schemas strategically using string constraints in the system prompt rather than deeply nested `z.enum` types to successfully bypass LLM structured output DFA state explosion limits.
 
 ## Current Folder Structure
 ```
@@ -154,7 +161,6 @@ The Research Report Contract v2.0 is a strictly defined, flattened TypeScript do
 - **Foundation**: It serves as the single source of truth for the upcoming Financial Agent, Risk Agent, and Decision Agent, decoupling them from raw data collection.
 
 ## Remaining Phases
-- Phase 6: Risk Agent
 - Phase 7: Decision Agent
 - Phase 8: LangGraph Workflow
 - Phase 9: Frontend
@@ -162,8 +168,54 @@ The Research Report Contract v2.0 is a strictly defined, flattened TypeScript do
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 6: Risk Agent**
-The Risk Agent will consume the `ResearchReport` (and possibly the `FinancialReport`) to identify potential threats, macroeconomic risks, and assign a comprehensive risk rating.
+**Phase 7: Decision Agent**
+The Decision Agent will consume the `ResearchReport`, `FinancialReport`, and `RiskReport` to generate a final investment recommendation.
+
+---
+
+## Phase 6 – Risk Agent
+
+### Purpose
+The Risk Agent is the third AI agent in the system. It consumes the completed `ResearchReport` from Phase 4 and `FinancialReport` from Phase 5 to produce a structured `RiskReport`. 
+It identifies, evaluates, prioritizes, and explains investment risks without generating investment recommendations.
+
+### Responsibilities
+- Receive both `ResearchReport` and `FinancialReport`.
+- Evaluate Competitive, Market, Operational, Technology, Regulatory, Leadership, Reputation, and Financial Risks.
+- Generate an overall risk score and an overall qualitative risk level (Very Low to Very High).
+- Ensure all risks are mapped explicitly to the exact originating report and section without hallucinating evidence.
+
+### Input
+`ResearchReport` (Contract v2.0)
+`FinancialReport` (Contract v1.0)
+
+### Output
+`RiskReport` (Contract v1.0)
+```typescript
+{
+  metadata: RiskMetadata;
+  executiveSummary: RiskExecutiveSummary;
+  competitiveRisks: RiskCategoryEvaluation;
+  marketRisks: RiskCategoryEvaluation;
+  operationalRisks: RiskCategoryEvaluation;
+  technologyRisks: RiskCategoryEvaluation;
+  regulatoryRisks: RiskCategoryEvaluation;
+  leadershipRisks: RiskCategoryEvaluation;
+  reputationRisks: RiskCategoryEvaluation;
+  financialRisks: RiskCategoryEvaluation;
+  overallRiskScore: number;
+  overallRiskLevel: string;
+  confidence: number;
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/risk/agent.ts` | Orchestrator — validates company match across reports, calls analyzer, and injects metadata |
+| `src/agents/risk/analyzer.ts` | Evaluates the reports using LangChain structured output with strict bounds |
+| `src/types/risk.ts` | TypeScript interfaces and Zod schemas for the Risk Report |
+| `scripts/test-risk.ts` | Integration test runner with cross-company validation checks |
 
 ---
 

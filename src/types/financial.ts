@@ -19,8 +19,8 @@ export type FinancialEvidence = z.infer<typeof FinancialEvidenceSchema>;
 export const FinancialEvaluationSchema = z.object({
   summary: z.string().describe("A concise 2-4 sentence summary of the financial evaluation."),
   reasoning: z.string().describe("Detailed reasoning explaining why the assigned score was chosen based on the evidence."),
-  score: z.number().min(0).max(100).describe("Evaluation score from 0 to 100."),
-  confidence: z.number().min(0).max(100).describe("Confidence score from 0 to 100 based on the amount and quality of available evidence."),
+  score: z.number().describe("Evaluation score from 0 to 100."),
+  confidence: z.number().describe("Confidence score from 0 to 100 based on the amount and quality of available evidence."),
   status: z.enum(["completed", "failed", "not_available"]).describe("Status of this evaluation."),
   evidence: z.array(FinancialEvidenceSchema).describe("Specific evidence items from the research report supporting this evaluation."),
 });
@@ -56,8 +56,8 @@ export const FinancialReportDataSchema = z.object({
   financialHealth: FinancialEvaluationSchema,
   strengths: z.array(FinancialStrengthSchema),
   weaknesses: z.array(FinancialWeaknessSchema),
-  overallScore: z.number().min(0).max(100).describe("The overall financial score out of 100."),
-  confidence: z.number().min(0).max(100).describe("The overall confidence out of 100."),
+  overallScore: z.number().describe("The overall financial score out of 100."),
+  confidence: z.number().describe("The overall confidence out of 100."),
 });
 
 export type FinancialReportData = z.infer<typeof FinancialReportDataSchema>;

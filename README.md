@@ -32,8 +32,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - **Phase 5: Financial Agent (Fully Complete)**
 - **Phase 6: Risk Agent (Fully Complete)**
 - **Phase 7: Decision Agent (Fully Complete)**
+- **Phase 8: LangGraph Workflow (Fully Complete)**
 
-**Current Phase:** Phase 8 (Pending)
+**Current Phase:** Phase 9 (Pending)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -76,6 +77,13 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - **Decision Report Contract**: Established the `DecisionReport` schema to structure the final verdict, providing precise explanations for `recommendation` and `decisionScore`.
 - **Contribution Normalization**: Orchestrator dynamically balances and ensures the fractional contributions of the three parent reports sum to exactly 100%.
 - **Holistic Reasoning Prompt**: Instructed the LLM explicitly against mechanical averaging, ensuring the verdict considers severe risks against financial strengths objectively.
+
+**What was completed in Phase 8:**
+- **LangGraph Workflow**: Integrated all four agents into a single deterministic `StateGraph` pipeline.
+- **Shared Graph State**: Designed a strongly typed `GraphState` interface shared across all nodes, tracking execution progress, timing, and errors.
+- **Graph Nodes**: Created four independent node files (`research-node.ts`, `financial-node.ts`, `risk-node.ts`, `decision-node.ts`) â€” each invoking exactly one agent.
+- **Execution Log**: Every node appends a structured `ExecutionLogEntry` (nodeName, status, startTime, endTime, durationMs) to the shared state.
+- **Fail-Fast Error Handling**: Conditional edges stop the graph immediately upon any node failure, recording the error in the shared state without propagating to downstream nodes.
 
 ## Current Folder Structure
 ```
@@ -546,3 +554,14 @@ companyName: string  // e.g. "Microsoft"
 ### How Phase 5 Consumes This Output
 The Financial Agent (Phase 5) will consume the structured `ResearchReport` from the Research Agent (via the `AgentResult`) and use it to evaluate the company's financial strength.
 
+
+---
+
+## Phase 8 – LangGraph Workflow
+
+Phase 8 integrates all four agents into a single deterministic StateGraph workflow using LangGraph. See the Phase 8 Completion Report for full details.
+
+### Remaining Phases
+- Phase 9: Frontend Dashboard
+- Phase 10: Testing
+- Phase 11: Deployment

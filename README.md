@@ -31,8 +31,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - **Phase 4: Research Agent (Fully Complete)**
 - **Phase 5: Financial Agent (Fully Complete)**
 - **Phase 6: Risk Agent (Fully Complete)**
+- **Phase 7: Decision Agent (Fully Complete)**
 
-**Current Phase:** Phase 7 (Pending)
+**Current Phase:** Phase 8 (Pending)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -69,6 +70,12 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - **Risk Report Contract**: Established the `RiskReport` schema defining strict categories (Competitive, Market, Operational, Technology, Regulatory, Leadership, Reputation, Financial).
 - **Risk Item Structuring**: Identified individual risks with precise mapping to `Probability`, `Impact`, `Severity`, and `MitigationFeasibility` levels.
 - **DFA Compilation Optimizations**: Engineered Zod schemas strategically using string constraints in the system prompt rather than deeply nested `z.enum` types to successfully bypass LLM structured output DFA state explosion limits.
+
+**What was completed in Phase 7:**
+- **Decision Agent Pipeline**: Built the final analytical layer fusing the findings of the Research, Financial, and Risk reports.
+- **Decision Report Contract**: Established the `DecisionReport` schema to structure the final verdict, providing precise explanations for `recommendation` and `decisionScore`.
+- **Contribution Normalization**: Orchestrator dynamically balances and ensures the fractional contributions of the three parent reports sum to exactly 100%.
+- **Holistic Reasoning Prompt**: Instructed the LLM explicitly against mechanical averaging, ensuring the verdict considers severe risks against financial strengths objectively.
 
 ## Current Folder Structure
 ```
@@ -161,15 +168,65 @@ The Research Report Contract v2.0 is a strictly defined, flattened TypeScript do
 - **Foundation**: It serves as the single source of truth for the upcoming Financial Agent, Risk Agent, and Decision Agent, decoupling them from raw data collection.
 
 ## Remaining Phases
-- Phase 7: Decision Agent
 - Phase 8: LangGraph Workflow
 - Phase 9: Frontend
 - Phase 10: Testing
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 7: Decision Agent**
-The Decision Agent will consume the `ResearchReport`, `FinancialReport`, and `RiskReport` to generate a final investment recommendation.
+**Phase 8: LangGraph Workflow**
+The LangGraph Workflow will tie all four agents (Research, Financial, Risk, Decision) into a fully automated execution graph.
+
+---
+
+## Phase 7 – Decision Agent
+
+### Purpose
+The Decision Agent is the final reasoning layer of the system. It consumes the completed `ResearchReport`, `FinancialReport`, and `RiskReport` to produce a structured `DecisionReport`. 
+It synthesizes findings, resolves conflicts, and produces the final investment recommendation.
+
+### Responsibilities
+- Synthesize all three input reports without introducing new external evidence.
+- Produce a structured executive summary outlining the final recommendation, highest strengths, and highest risks.
+- Provide a `Decision Score` and `Overall Confidence`.
+- Explain how each individual report contributed to the final verdict, ensuring the numeric contributions strictly sum to 100%.
+- Structure a clear Trade-off Analysis balancing opportunities against concerns.
+
+### Input
+`ResearchReport` (Contract v2.0)
+`FinancialReport` (Contract v1.0)
+`RiskReport` (Contract v1.0)
+
+### Output
+`DecisionReport` (Contract v1.0)
+```typescript
+{
+  metadata: DecisionMetadata;
+  executiveSummary: DecisionExecutiveSummary;
+  recommendation: "Strong Invest" | "Invest" | "Hold" | "Pass" | "Strong Pass";
+  decisionScore: number;
+  decisionReasoning: string;
+  confidence: number;
+  researchContribution: number;
+  researchContributionExplanation: string;
+  financialContribution: number;
+  financialContributionExplanation: string;
+  riskContribution: number;
+  riskContributionExplanation: string;
+  investmentOpportunities: InvestmentFactor[];
+  investmentConcerns: InvestmentFactor[];
+  tradeOffAnalysis: TradeOffAnalysis;
+  finalVerdict: string;
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/decision/agent.ts` | Orchestrator — validates inputs, balances the contribution math to exactly 100, and injects metadata |
+| `src/agents/decision/analyzer.ts` | LangChain LLM evaluation utilizing holistic reasoning constraints |
+| `src/types/decision.ts` | Zod schema and domain models for the `DecisionReport` |
+| `scripts/test-decision.ts` | Integration testing |
 
 ---
 

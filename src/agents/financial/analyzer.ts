@@ -1,4 +1,4 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { getStructuredModel } from "../../services/ai-provider";
 import { FinancialReportDataSchema, type FinancialReportData } from "../../types/financial";
 import type { ResearchReport } from "../../types/research";
 
@@ -28,15 +28,8 @@ Perform a structured evaluation covering:
 `;
 
 export async function analyzeFinancials(researchReport: ResearchReport): Promise<FinancialReportData> {
-  // Initialize the LangChain model (assumes GOOGLE_API_KEY is available in the environment)
-  const model = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    temperature: 0.1,
-    maxOutputTokens: 8192,
-  });
-
   // Create the structured output model
-  const structuredModel = model.withStructuredOutput(FinancialReportDataSchema);
+  const structuredModel = getStructuredModel(FinancialReportDataSchema);
 
   // Build the user prompt with the serialized Research Report
   const userPrompt = `Please generate a structured Financial Report based on the following Research Report for ${researchReport.metadata.company}:

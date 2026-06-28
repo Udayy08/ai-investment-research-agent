@@ -1,4 +1,4 @@
-import { generateText } from "../../services/gemini";
+import { generateText } from "../../services/ai-provider";
 import { Schema, SchemaType } from "@google/generative-ai";
 import { RESEARCH_TOPICS } from "../../constants/research-topics";
 import type {

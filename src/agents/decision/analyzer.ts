@@ -1,4 +1,4 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { getStructuredModel } from "../../services/ai-provider";
 import { DecisionReportDataSchema, type DecisionReportData } from "../../types/decision";
 import type { ResearchReport } from "../../types/research";
 import type { FinancialReport } from "../../types/financial";
@@ -28,13 +28,7 @@ export async function analyzeDecision(
   financialReport: FinancialReport,
   riskReport: RiskReport
 ): Promise<DecisionReportData> {
-  const model = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    temperature: 0.1,
-    maxOutputTokens: 8192,
-  });
-
-  const structuredModel = model.withStructuredOutput(DecisionReportDataSchema);
+  const structuredModel = getStructuredModel(DecisionReportDataSchema);
 
   const userPrompt = `Please generate a structured Decision Report based on the following reports for ${researchReport.metadata.company}:
 

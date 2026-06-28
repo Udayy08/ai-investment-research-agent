@@ -56,6 +56,8 @@ export function SourcesAccordion({ state }: Props) {
 
   const totalSources = researchSources.length + financialSources.length + riskSources.length;
 
+  if (totalSources === 0) return null;
+
   return (
     <Accordion className="w-full bg-card border rounded-lg mb-8 px-4">
       <AccordionItem value="sources" className="border-b-0">

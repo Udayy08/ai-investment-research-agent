@@ -1,4 +1,4 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { getStructuredModel } from "../../services/ai-provider";
 import { RiskReportDataSchema, type RiskReportData } from "../../types/risk";
 import type { ResearchReport } from "../../types/research";
 import type { FinancialReport } from "../../types/financial";
@@ -40,13 +40,7 @@ Perform a structured evaluation covering:
 `;
 
 export async function analyzeRisks(researchReport: ResearchReport, financialReport: FinancialReport): Promise<RiskReportData> {
-  const model = new ChatGoogleGenerativeAI({
-    model: "gemini-2.5-flash",
-    temperature: 0.1,
-    maxOutputTokens: 8192,
-  });
-
-  const structuredModel = model.withStructuredOutput(RiskReportDataSchema);
+  const structuredModel = getStructuredModel(RiskReportDataSchema);
 
   const userPrompt = `Please generate a structured Risk Report based on the following reports for ${researchReport.metadata.company}:
 

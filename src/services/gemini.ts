@@ -13,14 +13,14 @@ export interface GenerateTextOptions {
 }
 
 /**
- * Reusable function to generate text response from Gemini using gemini-2.5-flash.
+ * Reusable function to generate text response from Gemini using gemini-1.5-flash.
  */
 export async function generateText(
   prompt: string,
   options?: GenerateTextOptions
 ): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: "gemini-1.5-flash",
     systemInstruction: options?.systemInstruction,
     generationConfig: {
       temperature: options?.temperature ?? 0.1,

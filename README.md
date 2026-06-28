@@ -28,8 +28,10 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 4.2: Search Executor
 - Phase 4.3: Research Summarizer
 - Phase 4.4: Research Agent Orchestrator
+- **Phase 4: Research Agent (Fully Complete)**
+- **Phase 5: Financial Agent (Fully Complete)**
 
-**Current Phase:** Phase 4.4 (Completed)
+**Current Phase:** Phase 6 (Pending)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -49,6 +51,17 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Built a reusable Gemini service in `gemini.ts` using the official `@google/generative-ai` SDK, exporting `generateText()` for easy prompting with model parameters (like temperature, max tokens, system instructions).
 - Built a reusable Tavily service in `tavily.ts` using the `tavily` SDK, exporting `performSearch()` which returns clean, normalized search results containing only the title, URL, and snippet.
 - Created `scripts/test-services.ts` to test env validation, Gemini generation, and Tavily search.
+
+**What was completed in Phase 4:**
+- **Phase 4.1**: Built the Research Planner to deterministically define a list of `ResearchTopic`s.
+- **Phase 4.2**: Built the Search Executor to independently query the web for raw evidence mapped to topics.
+- **Phase 4.3**: Built the Research Summarizer to synthesize search evidence into structured facts using Gemini LLM.
+- **Phase 4.4**: Built the Orchestrator to tie the pipeline together, resolve metadata, and produce the flattened `ResearchReport Contract v2.0`.
+
+**What was completed in Phase 5:**
+- **Financial Agent Pipeline**: Built an independent LangChain-based pipeline using `ChatGoogleGenerativeAI` with structured output (`zod`).
+- **Financial Report Contract**: Established the `FinancialReport` schema ensuring traceability by coupling evidence directly to corresponding Research Report sections.
+- **Evaluation Logic**: Engineered the agent to grade Business Quality, Market Position, Financial Health, etc. generating an `overallScore` and assigning explicitly defined `reasoning` without inventing external data.
 
 ## Current Folder Structure
 ```
@@ -118,8 +131,29 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
   }
   ```
 
+## Research Agent Architecture
+
+The complete Research pipeline executes sequentially to build a comprehensive, factual research report from the ground up:
+
+`Company Name`
+↓
+**Research Planner**: Determines *what* needs to be researched by generating a deterministic, prioritized list of research topics.
+↓
+**Search Executor**: Determines *how* to find the data by generating targeted web search queries and collecting raw evidence from Tavily.
+↓
+**Research Summarizer**: Synthesizes the raw evidence into concise, citation-backed sections using Gemini LLM.
+↓
+**Research Agent Orchestrator**: Coordinates the above three modules, handles errors gracefully, and assembles the final metadata.
+↓
+`Research Report Contract v2.0`
+
+### Research Report Contract v2.0
+The Research Report Contract v2.0 is a strictly defined, flattened TypeScript domain model (`ResearchReport`) that serves as the shared contract for all downstream modules. 
+- **Consistency**: It standardizes how information is structured (e.g. `summary`, `confidence`, `sources`, `status`) irrespective of which LLM provider was used.
+- **Traceability**: It retains both section-level and item-level sources ensuring every fact can be traced back to its origin.
+- **Foundation**: It serves as the single source of truth for the upcoming Financial Agent, Risk Agent, and Decision Agent, decoupling them from raw data collection.
+
 ## Remaining Phases
-- Phase 5: Financial Agent
 - Phase 6: Risk Agent
 - Phase 7: Decision Agent
 - Phase 8: LangGraph Workflow
@@ -128,8 +162,53 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 5: Financial Agent**
-The Financial Agent will consume the structured `ResearchReport` from the Research Agent and evaluate the company's financial strength and health.
+**Phase 6: Risk Agent**
+The Risk Agent will consume the `ResearchReport` (and possibly the `FinancialReport`) to identify potential threats, macroeconomic risks, and assign a comprehensive risk rating.
+
+---
+
+## Phase 5 – Financial Agent
+
+### Purpose
+The Financial Agent is the second AI agent in the system. It consumes the completed `ResearchReport` from Phase 4 and produces a structured `FinancialReport`. 
+It relies exclusively on the provided research without performing external web searches or fetching stock prices.
+
+### Responsibilities
+- Receive the `ResearchReport`.
+- Evaluate Business Quality, Market Position, Competitive Advantage, Growth Potential, Innovation, Operational Strength, and Financial Health.
+- Generate an overall financial score and confidence metric.
+- Extract strengths and weaknesses backed by structured evidence tracing back to the Research Report.
+
+### Input
+`ResearchReport` (Contract v2.0)
+
+### Output
+`FinancialReport` (Contract v1.0)
+```typescript
+{
+  metadata: FinancialMetadata;
+  executiveSummary: string;
+  businessQuality: FinancialEvaluation;
+  marketPosition: FinancialEvaluation;
+  competitiveAdvantage: FinancialEvaluation;
+  growthPotential: FinancialEvaluation;
+  innovation: FinancialEvaluation;
+  operationalStrength: FinancialEvaluation;
+  financialHealth: FinancialEvaluation;
+  strengths: FinancialStrength[];
+  weaknesses: FinancialWeakness[];
+  overallScore: number;
+  confidence: number;
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/financial/agent.ts` | Orchestrator — calls analyzer and injects metadata |
+| `src/agents/financial/analyzer.ts` | Evaluates the report using LangChain structured output |
+| `src/types/financial.ts` | TypeScript interfaces and Zod schemas for the Financial Report |
+| `scripts/test-financial.ts` | Integration test runner |
 
 ---
 

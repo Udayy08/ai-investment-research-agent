@@ -7,33 +7,13 @@ import type {
   TopicSearchResult,
 } from "../../types/research";
 
-// ─── Query Templates ──────────────────────────────────────────────────────────
-//
-// Maps each topic id to a suffix that is appended to the company name to form
-// a deterministic search query.  Adding a new topic only requires a new entry
-// here — no other code changes are needed.
-
-const QUERY_TEMPLATES: Record<string, string> = {
-  company_overview: "company overview",
-  industry: "industry and sector",
-  business_model: "business model revenue streams",
-  leadership: "leadership CEO executive team",
-  competitors: "competitors and rival companies",
-  recent_news: "latest news",
-  market_sentiment: "investor market sentiment",
-  key_strengths: "competitive advantages key strengths",
-  key_challenges: "business challenges risks",
-};
-
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 /**
  * Builds a deterministic search query for a given topic and company.
- * Falls back to a generic pattern if the topic id is not in the template map.
  */
 function buildQuery(company: string, topic: ResearchTopic): string {
-  const suffix = QUERY_TEMPLATES[topic.id] ?? topic.title.toLowerCase();
-  return `${company} ${suffix}`;
+  return topic.queryTemplate.replace("{company}", company);
 }
 
 /**

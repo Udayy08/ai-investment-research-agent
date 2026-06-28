@@ -27,8 +27,9 @@ The AI Investment Research Agent is an advanced AI application that allows users
 - Phase 4.1: Research Planner
 - Phase 4.2: Search Executor
 - Phase 4.3: Research Summarizer
+- Phase 4.4: Research Agent Orchestrator
 
-**Current Phase:** Phase 4.3 (Completed)
+**Current Phase:** Phase 4.4 (Completed)
 
 **What was completed in Phase 1:**
 - Scaffolded a blank Next.js 15 project with TypeScript, Tailwind CSS, and ESLint.
@@ -58,11 +59,13 @@ ai-investment-research-agent/
 │   ├── test-services.ts    # Service integration test CLI script
 │   ├── test-planner.ts     # Research Planner unit test CLI script
 │   ├── test-search.ts      # Search Executor integration test CLI script
-│   └── test-summarizer.ts  # Research Summarizer integration test CLI script
+│   ├── test-summarizer.ts  # Research Summarizer integration test CLI script
+│   └── test-agent.ts       # Research Agent Orchestrator integration test CLI script
 ├── src/                    # Application source code
 │   ├── app/                # Next.js App Router root
 │   ├── agents/             # Modular agent logic folder
 │   │   ├── research/       # Research agent modules and tasks
+│   │   │   ├── agent.ts        # Research Agent Orchestrator: wires pipeline, returns AgentResult
 │   │   │   ├── planner.ts      # Research Planner: validates input, builds ResearchPlan
 │   │   │   ├── search.ts       # Search Executor: queries Tavily per topic, returns SearchReport
 │   │   │   └── summarizer.ts   # Research Summarizer: calls Gemini per topic, returns ResearchReport
@@ -116,7 +119,6 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
   ```
 
 ## Remaining Phases
-- Phase 4.4: Research Agent Orchestrator
 - Phase 5: Financial Agent
 - Phase 6: Risk Agent
 - Phase 7: Decision Agent
@@ -126,8 +128,8 @@ To prevent duplication and keep agent implementation clean, Phase 3 centralizes 
 - Phase 11: Deployment
 
 ## Next Phase
-**Phase 4.4: Research Agent Orchestrator**
-The orchestrator will wire together the Planner, Search Executor, and Research Summarizer into a single callable function — accepting a company name and returning a complete `ResearchReport` without any financial analysis or investment recommendations.
+**Phase 5: Financial Agent**
+The Financial Agent will consume the structured `ResearchReport` from the Research Agent and evaluate the company's financial strength and health.
 
 ---
 
@@ -309,6 +311,50 @@ It uses Gemini to produce factual, professional summaries — one topic at a tim
 | `scripts/test-summarizer.ts` | Integration test runner (requires real API credentials) |
 
 ### How Phase 4.4 Consumes This Output
-The Research Agent Orchestrator (Phase 4.4) will wire the Planner → Search Executor → Summarizer into a single callable function.
-It will accept a company name as input and return the complete `ResearchReport` as its only output.
+The Research Agent Orchestrator (Phase 4.4) wires the Planner → Search Executor → Summarizer into a single callable function.
+It accepts a company name as input and returns the complete `ResearchReport` as its only output.
+
+---
+
+## Phase 4.4 – Research Agent Orchestrator
+
+### Purpose
+The Research Agent Orchestrator is the final module of the Research Agent pipeline. 
+It does not contain research logic itself; instead, it orchestrates the modules that have already been implemented to provide a clean, single entry point for generating a research report.
+
+### Responsibilities
+- Accept the company name as input.
+- Execute the Research Planner (`createResearchPlan`).
+- Execute the Search Executor (`executeSearch`).
+- Execute the Research Summarizer (`summarizeResearch`).
+- Return the final structured `ResearchReport` wrapped in an `AgentResult` envelope.
+- Handle failures gracefully at each step, returning meaningful errors without crashing.
+
+### Pipeline
+`Company Name` → `Planner` → `Search Executor` → `Summarizer` → `AgentResult (containing ResearchReport)`
+
+### Input
+```typescript
+companyName: string  // e.g. "Microsoft"
+```
+
+### Output – AgentResult Schema
+```typescript
+{
+  company: string;
+  status: "completed" | "failed";
+  researchReport: ResearchReport | null;
+  error?: string; // Populated only when status is "failed"
+}
+```
+
+### Key Files
+| File | Responsibility |
+|---|---|
+| `src/agents/research/agent.ts` | Research Agent Orchestrator — coordinates the pipeline and handles errors |
+| `src/types/research.ts` | Adds the `AgentResult` envelope interface |
+| `scripts/test-agent.ts` | Integration test runner for the orchestrator |
+
+### How Phase 5 Consumes This Output
+The Financial Agent (Phase 5) will consume the structured `ResearchReport` from the Research Agent (via the `AgentResult`) and use it to evaluate the company's financial strength.
 

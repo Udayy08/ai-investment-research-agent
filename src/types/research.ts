@@ -2,9 +2,8 @@
  * Shared TypeScript interfaces for the Research Agent pipeline.
  */
 
-/**
- * A single research topic that the planner includes in a research plan.
- */
+// ─── Phase 4.1 – Research Planner ─────────────────────────────────────────────
+
 export interface ResearchTopic {
   /** A unique machine-readable identifier for the topic. */
   id: string;
@@ -12,92 +11,150 @@ export interface ResearchTopic {
   title: string;
   /** Determines the order in which topics are researched. Lower means higher priority. */
   priority: number;
+  /** The template used by the Search Executor to generate the query (e.g., "{company} competitors"). */
+  queryTemplate: string;
+  /** The field name in the ResearchReport this topic maps to. */
+  reportField: keyof Omit<ResearchReport, "metadata">;
+  /** The expected structured output type for this topic. */
+  resultType: "summary" | "competitors" | "news" | "strengths" | "challenges";
 }
 
-/**
- * The structured output produced by the Research Planner.
- * Describes what information must be collected for a specific company.
- */
 export interface ResearchPlan {
-  /** The validated and trimmed company name. */
   company: string;
-  /** Ordered list of topics to be researched. */
   researchTopics: ResearchTopic[];
 }
 
-/**
- * The input accepted by the Research Planner.
- */
 export interface PlannerInput {
-  /** The name of the company to research. */
   companyName: string;
 }
 
 // ─── Phase 4.2 – Search Executor ─────────────────────────────────────────────
 
-/**
- * A single piece of evidence returned by a web search.
- * The snippet field maps to the content/snippet returned by Tavily.
- */
 export interface SearchEvidence {
   title: string;
   url: string;
   snippet: string;
 }
 
-/**
- * The search results collected for one research topic.
- */
 export interface TopicSearchResult {
-  /** The topic title (e.g. "Leadership"). */
   topic: string;
-  /** The deterministic query that was executed. */
   query: string;
-  /** Evidence collected from the web search. */
   results: SearchEvidence[];
 }
 
-/**
- * The structured output produced by the Search Executor.
- * Consumed by the Research Summarizer in Phase 4.3.
- */
 export interface SearchReport {
-  /** The validated company name (passed through from the ResearchPlan). */
   company: string;
-  /** One entry per research topic in the original ResearchPlan. */
   searchResults: TopicSearchResult[];
 }
 
-// ─── Phase 4.3 – Research Summarizer ─────────────────────────────────────────
+// ─── Phase 4.3 & 4.4 – Research Report Contract v2.0 ─────────────────────────
 
-/**
- * A single citation preserved from the original web evidence.
- * Every summarized section must link back to at least one source.
- */
 export interface ReportSource {
-  /** The research section this source supports (e.g. "Leadership"). */
-  section: string;
   title: string;
   url: string;
   snippet: string;
 }
 
-/**
- * The fully structured Research Report produced by the Summarizer.
- * This is the shared data contract consumed by every downstream agent
- * (Financial, Risk, Decision) in the pipeline.
- */
-export interface ResearchReport {
+export interface ReportMetadata {
   company: string;
-  companyOverview: string;
-  industry: string;
-  businessModel: string;
-  leadership: string;
-  competitors: string[];
-  recentNews: string[];
-  marketSentiment: string;
-  keyStrengths: string[];
-  keyChallenges: string[];
-  /** All citations collected across every summarized section. */
+  generatedAt: string;
+  researchVersion: string;
+  overallConfidence: number;
+  totalSources: number;
+  status: "completed" | "failed";
+}
+
+export type SectionStatus = "completed" | "failed" | "not_available";
+
+export interface TextSection {
+  summary: string;
+  confidence: number;
+  sourceCount: number;
+  status: SectionStatus;
   sources: ReportSource[];
 }
+
+// Rich Structures
+
+export interface Competitor {
+  name: string;
+  reason: string;
+  sources: ReportSource[];
+}
+
+export interface CompetitorsSection {
+  competitors: Competitor[];
+  confidence: number;
+  sourceCount: number;
+  status: SectionStatus;
+  sources: ReportSource[];
+}
+
+export interface RecentNews {
+  headline: string;
+  summary: string;
+  date: string;
+  sentiment: string;
+  impact: string;
+  sources: ReportSource[];
+}
+
+export interface NewsSection {
+  news: RecentNews[];
+  confidence: number;
+  sourceCount: number;
+  status: SectionStatus;
+  sources: ReportSource[];
+}
+
+export interface KeyStrength {
+  title: string;
+  description: string;
+  importance: string;
+  sources: ReportSource[];
+}
+
+export interface StrengthsSection {
+  strengths: KeyStrength[];
+  confidence: number;
+  sourceCount: number;
+  status: SectionStatus;
+  sources: ReportSource[];
+}
+
+export interface KeyChallenge {
+  title: string;
+  description: string;
+  severity: string;
+  sources: ReportSource[];
+}
+
+export interface ChallengesSection {
+  challenges: KeyChallenge[];
+  confidence: number;
+  sourceCount: number;
+  status: SectionStatus;
+  sources: ReportSource[];
+}
+
+export interface ResearchReport {
+  metadata: ReportMetadata;
+  companyOverview: TextSection;
+  industry: TextSection;
+  businessModel: TextSection;
+  leadership: TextSection;
+  marketSentiment: TextSection;
+  competitors: CompetitorsSection;
+  recentNews: NewsSection;
+  keyStrengths: StrengthsSection;
+  keyChallenges: ChallengesSection;
+}
+
+export interface AgentResult {
+  company: string;
+  status: "completed" | "failed";
+  researchReport: ResearchReport | null;
+  error?: string;
+}
+
+

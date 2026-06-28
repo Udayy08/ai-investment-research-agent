@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type ResponseSchema } from "@google/generative-ai";
 import { env } from "./env";
 
 // Initialize the Google Generative AI client internally
@@ -8,6 +8,8 @@ export interface GenerateTextOptions {
   systemInstruction?: string;
   temperature?: number;
   maxOutputTokens?: number;
+  responseMimeType?: string;
+  responseSchema?: ResponseSchema;
 }
 
 /**
@@ -23,6 +25,8 @@ export async function generateText(
     generationConfig: {
       temperature: options?.temperature ?? 0.1,
       maxOutputTokens: options?.maxOutputTokens,
+      responseMimeType: options?.responseMimeType,
+      responseSchema: options?.responseSchema,
     },
   });
 

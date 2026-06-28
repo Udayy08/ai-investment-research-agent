@@ -1,11 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import type { GraphState } from "@/graph/graph-state";
+
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { SearchBar } from "@/components/dashboard/search-bar";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { WorkflowProgress } from "@/components/dashboard/workflow-progress";
+import { RecommendationCard } from "@/components/dashboard/recommendation-card";
+import { ResearchAccordion } from "@/components/dashboard/research-accordion";
+import { FinancialAccordion } from "@/components/dashboard/financial-accordion";
+import { RiskAccordion } from "@/components/dashboard/risk-accordion";
+import { DecisionAccordion } from "@/components/dashboard/decision-accordion";
+import { SourcesAccordion } from "@/components/dashboard/sources-accordion";
+import { ErrorBanner } from "@/components/dashboard/error-banner";
 
 export default function Home() {
   const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [state, setState] = useState<GraphState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -13,8 +26,23 @@ export default function Home() {
     if (!companyName.trim()) return;
 
     setLoading(true);
-    setResult(null);
+    setState(null);
     setError(null);
+
+    // Provide initial state for loading indicator
+    setState({
+      companyName: companyName.trim(),
+      currentStep: "research",
+      workflowStatus: "running",
+      errorMessage: null,
+      workflowStartTime: new Date().toISOString(),
+      workflowCompletionTime: null,
+      executionLog: [],
+      researchResult: null,
+      financialResult: null,
+      riskResult: null,
+      decisionResult: null,
+    });
 
     try {
       const response = await fetch("/api/analyze", {
@@ -31,56 +59,77 @@ export default function Home() {
         throw new Error(data.error || "An unexpected error occurred.");
       }
 
-      setResult(JSON.stringify(data, null, 2));
+      setState(data);
+      if (data.workflowStatus === "failed") {
+        setError(data.errorMessage || "Workflow failed during execution.");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
+      setState(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setCompanyName("");
+    setState(null);
+  };
+
   return (
-    <div className="min-h-screen p-8 font-sans max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">AI Investment Research Agent</h1>
-      
-      <form onSubmit={handleAnalyze} className="mb-8 flex gap-4">
-        <input
-          type="text"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="Enter company name (e.g. Apple)"
-          className="border p-2 rounded flex-1"
-          disabled={loading}
+    <div className="min-h-screen bg-background font-sans">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <DashboardHeader />
+
+        <SearchBar 
+          companyName={companyName} 
+          setCompanyName={setCompanyName} 
+          onAnalyze={handleAnalyze} 
+          loading={loading} 
         />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={loading || !companyName.trim()}
-        >
-          {loading ? "Analyzing..." : "Analyze"}
-        </button>
-      </form>
 
-      {error && (
-        <div className="bg-red-100 text-red-800 p-4 rounded mb-8">
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+        <ErrorBanner error={error || ""} onRetry={handleRetry} />
 
-      {loading && (
-        <div className="mb-8">
-          <p className="text-lg opacity-80 animate-pulse">Running full LangGraph workflow. This will take several minutes...</p>
-        </div>
-      )}
+        {!state && !error && !loading && (
+          <EmptyState />
+        )}
 
-      {result && (
-        <div>
-          <h2 className="text-xl font-bold mb-4">Workflow Result (GraphState JSON)</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
-            {result}
-          </pre>
-        </div>
-      )}
+        {state && (
+          <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <WorkflowProgress executionLog={state.executionLog} currentStep={state.currentStep} />
+            
+            {state.decisionResult?.decisionReport && state.financialResult?.financialReport && state.riskResult?.riskReport && (
+              <RecommendationCard 
+                decision={state.decisionResult} 
+                financial={state.financialResult} 
+                risk={state.riskResult} 
+              />
+            )}
+
+            {state.researchResult?.researchReport && (
+              <ResearchAccordion report={state.researchResult.researchReport} />
+            )}
+
+            {state.financialResult?.financialReport && (
+              <FinancialAccordion report={state.financialResult.financialReport} />
+            )}
+
+            {state.riskResult?.riskReport && (
+              <RiskAccordion report={state.riskResult.riskReport} />
+            )}
+
+            {state.decisionResult?.decisionReport && (
+              <DecisionAccordion report={state.decisionResult.decisionReport} />
+            )}
+
+            {(state.researchResult || state.financialResult) && (
+              <SourcesAccordion state={state} />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

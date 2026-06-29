@@ -180,17 +180,45 @@ src/
 
 ---
 
-## 🗺️ Roadmap
+## 🔮 Future Improvements
 
-- [x] Enterprise Project Setup & Infrastructure
-- [x] LangGraph Orchestration Pipeline
-- [x] Specialized Agents (Research, Financial, Risk, Decision)
-- [x] Professional Dashboard UI
-- [x] AI Provider Fallback Strategy
-- [ ] Portfolio Comparison View
-- [ ] Historical Financial Data API Integration (e.g., Alpha Vantage)
-- [ ] Database Persistence (Supabase/Prisma)
-- [ ] Streaming Workflow Updates via Server-Sent Events (SSE)
+### Future Architecture Optimization
+
+While the current architecture is fully functional and production-ready, the next planned optimization is to separate the output of each AI agent into two distinct representations:
+
+#### Human Report
+- Rich and detailed.
+- Designed for dashboard visualization.
+- Includes explanations, evidence, sources, and user-friendly formatting.
+
+#### Agent Summary
+- Compact structured JSON.
+- Never shown to end users.
+- Consumed only by downstream AI agents.
+- Contains only the essential reasoning context.
+
+**Benefits of this Optimization:**
+- Reduce prompt sizes by approximately 50–70%.
+- Significantly reduce token consumption.
+- Improve overall execution speed.
+- Reduce API costs.
+- Minimize Gemini/Groq rate-limit issues.
+- Improve scalability for larger workflows.
+- Preserve the existing user experience while making inter-agent communication far more efficient.
+
+### Planned Features
+
+Future versions of this system may introduce:
+- Parallel execution for independent agents.
+- Streaming workflow updates.
+- Hybrid deterministic financial APIs.
+- Portfolio comparison.
+- PDF report export.
+- User authentication.
+- Historical report storage.
+- Cloud deployment.
+- Docker support.
+- CI/CD automation.
 
 ---
 
